@@ -5,7 +5,6 @@ import sys
 from pathlib import Path
 
 import analex
-import componentes
 import flujo
 
 
@@ -79,12 +78,12 @@ class AnalizadorSintactico:
             return True
         if isinstance(categoria_esperada, (set, frozenset, tuple, list)):
             esperado = "uno de " + ", ".join(sorted(categoria_esperada))
+            sincronizacion = set(categoria_esperada) | {"EOF"}
         else:
             esperado = categoria_esperada
+            sincronizacion = {categoria_esperada, "EOF"}
         self._error(esperado)
-        self.sincroniza(set(categoria_esperada)
-                        if isinstance(categoria_esperada, (set, frozenset))
-                        else {categoria_esperada, "EOF"})
+        self.sincroniza(sincronizacion)
         return False
 
     # <Programa> -> PROGRAMA Identif ; <Declaraciones> INICIO
