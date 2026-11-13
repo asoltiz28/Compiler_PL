@@ -176,21 +176,24 @@ class AnalizadorSintactico:
     # <Si> -> SI ( <Expresion> ) ENTONCES <Sentencia> [ SINO <Sentencia> ]
     def analiza_si(self):
         self.avanza()
-        self.comprueba("ParentAp")
+        #self.comprueba("ParentAp")
         self.analiza_expresion()
-        self.comprueba("ParentCi")
+        #self.comprueba("ParentCi")
         self.comprueba("PR:ENTONCES")
         self.analiza_sentencia()
-        if self._es("PR:SINO"):
-            self.avanza()
-            self.analiza_sentencia()
+        self.comprueba("PR:SINO")
+        self.analiza_sentencia()
+
+        #if self._es("PR:SINO"):
+            #self.avanza()
+            #self.analiza_sentencia()
 
     # <Mientras> -> MIENTRAS ( <Expresion> ) HACER <Sentencia>
     def analiza_mientras(self):
         self.avanza()
-        self.comprueba("ParentAp")
+        #self.comprueba("ParentAp")
         self.analiza_expresion()
-        self.comprueba("ParentCi")
+        #self.comprueba("ParentCi")
         self.comprueba("PR:HACER")
         self.analiza_sentencia()
 
