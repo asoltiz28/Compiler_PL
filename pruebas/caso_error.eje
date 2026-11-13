@@ -1,0 +1,7 @@
+  PROGRAMA p;
+  VAR x:ENTERO;
+  INICIO
+    x := ;
+    ESCRIBE(x);
+    x := 1 +;
+  FIN.
