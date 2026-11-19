@@ -197,13 +197,21 @@ class AnalizadorSintactico:
         self.comprueba("PR:HACER")
         self.analiza_sentencia()
 
-    # <EntradaSalida> -> ( LEE | ESCRIBE ) ( [ <Expresion> ] )
+    # <EntradaSalida> -> LEE ( Identif ) | ESCRIBE ( <ExpresionSimple> )
     def analiza_entrada_salida(self):
-        self.avanza()
-        self.comprueba("ParentAp")
-        if self._clave() in self.INICIO_EXPRESION:
-            self.analiza_expresion()
-        self.comprueba("ParentCi")
+        if self._es("PR:LEE"):
+            self.avanza()
+            self.comprueba("ParentAp")
+            if self._es("Identif"):
+                self.avanza()
+            else:
+                self._error("Identif")
+            self.comprueba("ParentCi")
+        elif self._es("PR:ESCRIBE"):
+            self.avanza()
+            self.comprueba("ParentAp")
+            self.analiza_expresion_simple()
+            self.comprueba("ParentCi")
 
     # <Expresion> -> <ExpresionSimple> [ OpRel <ExpresionSimple> ]
     def analiza_expresion(self):

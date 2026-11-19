@@ -1,0 +1,5 @@
+PROGRAMA p;
+VAR x:ENTERO;
+INICIO
+LEE(x+1);
+FIN.
