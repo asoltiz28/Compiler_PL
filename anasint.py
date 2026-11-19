@@ -86,8 +86,8 @@ class AnalizadorSintactico:
         self.sincroniza(sincronizacion)
         return False
 
-    # <Programa> -> PROGRAMA Identif ; <Declaraciones> INICIO
-    #                <ListaSentencias> FIN .
+    # Programa -> PROGRAMA id ; decl_var instrucciones .
+    # (el cuerpo del programa va siempre entre INICIO y FIN, apartado 2.1 del PDF)
     def analiza_programa(self):
         correcto = True
         correcto = self.comprueba("PR:PROGRAMA") and correcto
@@ -104,13 +104,19 @@ class AnalizadorSintactico:
             correcto = False
         return correcto and self.errores == 0
 
-    # <Declaraciones> -> VAR <Declaracion> <Declaraciones> | lambda
+    # decl_var -> VAR lista_id : tipo_std ; decl_v | λ
+    # decl_v   -> ( lista_id : tipo_std ; )*
+    # Otra declaración empieza por PRIMEROS(lista_id) = {id}.
     def analiza_declaraciones(self):
-        while self._es("PR:VAR"):
+        if self._es("PR:VAR"):
             self.avanza()
             self.analiza_declaracion()
+            while self._es("Identif"):
+                self.analiza_declaracion()
 
-    # <Declaracion> -> Identif { , Identif } : <Tipo> ;
+    # Una declaración: lista_id : tipo_std ;
+    # lista_id -> id resto_listaid
+    # resto_listaid -> , lista_id | λ
     def analiza_declaracion(self):
         if not self._es("Identif"):
             self._error("Identif")
@@ -126,7 +132,7 @@ class AnalizadorSintactico:
         self.analiza_tipo()
         return self.comprueba("PtoComa")
 
-    # <Tipo> -> ENTERO | REAL | BOOLEANO
+    # tipo_std -> ENTERO | REAL | BOOLEANO
     def analiza_tipo(self):
         if self._es({"PR:ENTERO", "PR:REAL", "PR:BOOLEANO"}):
             self.avanza()
@@ -148,8 +154,10 @@ class AnalizadorSintactico:
         while self._es("PtoComa"):
             self.avanza()
 
-    # <Sentencia> -> Identif := <Expresion> | SI ... | MIENTRAS ...
-    #                 | LEE (...) | ESCRIBE (...) | <Bloque>
+    # instrucción -> inst_simple | inst_es
+    #              | SI expresión ENTONCES instrucciones SINO instrucciones
+    #              | MIENTRAS expresión HACER instrucciones
+    # inst_simple -> id opasigna expresión
     def analiza_sentencia(self):
         if self._es("Identif"):
             self.avanza()
@@ -167,13 +175,13 @@ class AnalizadorSintactico:
             self._error("inicio de sentencia")
             self.sincroniza(self.SINCRONIZACION | self.INICIO_SENTENCIA)
 
-    # <Bloque> -> INICIO <ListaSentencias> FIN
+    # instrucciones -> INICIO lista_inst FIN
     def analiza_bloque(self):
         self.comprueba("PR:INICIO")
         self.analiza_lista_sentencias({"PR:FIN"})
         self.comprueba("PR:FIN")
 
-    # <Si> -> SI ( <Expresion> ) ENTONCES <Sentencia> [ SINO <Sentencia> ]
+    # instrucción -> SI expresión ENTONCES instrucciones SINO instrucciones
     def analiza_si(self):
         self.avanza()
         #self.comprueba("ParentAp")
@@ -188,7 +196,7 @@ class AnalizadorSintactico:
             #self.avanza()
             #self.analiza_sentencia()
 
-    # <Mientras> -> MIENTRAS ( <Expresion> ) HACER <Sentencia>
+    # instrucción -> MIENTRAS expresión HACER instrucciones
     def analiza_mientras(self):
         self.avanza()
         #self.comprueba("ParentAp")
@@ -197,7 +205,7 @@ class AnalizadorSintactico:
         self.comprueba("PR:HACER")
         self.analiza_sentencia()
 
-    # <EntradaSalida> -> LEE ( Identif ) | ESCRIBE ( <ExpresionSimple> )
+    # inst_es -> LEE ( id ) | ESCRIBE ( expr_simple )
     def analiza_entrada_salida(self):
         if self._es("PR:LEE"):
             self.avanza()
@@ -213,7 +221,8 @@ class AnalizadorSintactico:
             self.analiza_expresion_simple()
             self.comprueba("ParentCi")
 
-    # <Expresion> -> <ExpresionSimple> [ OpRel <ExpresionSimple> ]
+    # expresión  -> expr_simple resto_expr
+    # resto_expr -> oprel expr_simple | λ
     def analiza_expresion(self):
         correcto = self.analiza_expresion_simple()
         if self._es("OpRel"):
@@ -231,7 +240,9 @@ class AnalizadorSintactico:
             correcto = self.analiza_termino() and correcto
         return correcto
     
-    # <Termino> -> <Factor> { OpMult <Factor> | Y <Factor> }
+    # término    -> factor resto_term
+    # resto_term -> opmult factor resto_term | Y factor resto_term | λ
+    # (resto_term se hace con el while)
     def analiza_termino(self):
         correcto = self.analiza_factor()
         while self._es("OpMult") or self._es("PR:Y"):
@@ -239,8 +250,7 @@ class AnalizadorSintactico:
             correcto = self.analiza_factor() and correcto
         return correcto
 
-    # <Factor> -> Identif | Numero | CIERTO | FALSO | ( <Expresion> )
-    #              | NO <Factor>
+    # factor -> id | num | ( expresión ) | NO factor | CIERTO | FALSO
     def analiza_factor(self):
         if self._es({"Identif", "Numero", "PR:CIERTO", "PR:FALSO"}):
             self.avanza()

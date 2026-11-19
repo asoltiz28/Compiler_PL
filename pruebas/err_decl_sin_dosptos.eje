@@ -1,0 +1,6 @@
+  PROGRAMA p;
+  VAR x:ENTERO;
+      y REAL;
+  INICIO
+    x := 1;
+  FIN.

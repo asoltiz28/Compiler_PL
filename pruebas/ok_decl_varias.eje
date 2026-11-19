@@ -1,0 +1,7 @@
+PROGRAMA p;
+VAR x:ENTERO;
+y:REAL;
+a,b: BOOLEANO;
+INICIO
+x := 1;
+FIN.
