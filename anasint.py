@@ -15,7 +15,7 @@ class AnalizadorSintactico:
         "Identif", "PR:SI", "PR:MIENTRAS", "PR:LEE", "PR:ESCRIBE",
         "PR:INICIO",
     }
-    INICIO_EXPRESION = {"Identif", "Numero", "ParentAp", "OpAdd",
+    INICIO_EXPRESION = {"Identif", "Numero", "ParentAp",
                         "PR:NO", "PR:CIERTO", "PR:FALSO"}
     SINCRONIZACION = {"PtoComa", "PR:FIN", "PR:SINO", "EOF"}
 
@@ -135,19 +135,22 @@ class AnalizadorSintactico:
         self.sincroniza({"PtoComa", "PR:INICIO", "EOF"})
         return False
 
-    # <ListaSentencias> -> { <Sentencia> ; }.
+    # <ListaSentencias> -> <Sentencia> ; <ListaSentencias> | lambda
     def analiza_lista_sentencias(self, siguientes):
         while self._clave() in self.INICIO_SENTENCIA:
             self.analiza_sentencia()
-            if not self.comprueba("PtoComa"):
+            if self._es("PtoComa"):
+                self.avanza()
+                if self._es("PtoComa"):
+                    self._error("una sola instrucción antes del punto y coma")
+                    self.sincroniza(set(siguientes) | self.INICIO_SENTENCIA |
+                                    {"EOF"})
+            else:
+                self._error("PtoComa")
                 self.sincroniza(set(siguientes) | self.INICIO_SENTENCIA |
                                 {"PtoComa", "EOF"})
                 if self._es("PtoComa"):
                     self.avanza()
-        # Un punto y coma final es válido antes de FIN o SINO.
-        while self._es("PtoComa"):
-            self.avanza()
-
     # <Sentencia> -> Identif := <Expresion> | SI ... | MIENTRAS ...
     #                 | LEE (...) | ESCRIBE (...) | <Bloque>
     def analiza_sentencia(self):
@@ -221,10 +224,8 @@ class AnalizadorSintactico:
             correcto = self.analiza_expresion_simple() and correcto
         return correcto
 
-    # <ExpresionSimple> -> [ OpAdd ] <Termino> { OpAdd <Termino> }
+    # <ExpresionSimple> -> <Termino> { OpAdd <Termino> }
     def analiza_expresion_simple(self):
-        if self._es("OpAdd"):
-            self.avanza()
         correcto = self.analiza_termino()
         while self._es("OpAdd") or self._es("PR:O"):
             self.avanza()
